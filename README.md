@@ -1,12 +1,22 @@
 # STM32WLE5_Tx_Example
 
+THIS CODE DOESN'T WORK YET!!!
+
+The goal of this project is to send some data from one STM32WLE5 to anotherone using LoRa. It is supposed to be as simple as possible. Therefore the roles and all the parameters are fixed.
+
+I am using the Wio-E5-LE module by Seeed Studio as the rf-module on the devellopment boards 'Wio-E5-LE Dev Kit' and 'Wio-E5-LE mini Dev Board'. The Wio-E5 modules use the STM32WLE5JC.
+
+The Wio-E5 comes with an AT-command software wich has to be cleared first. After that it is programmed with the STM32CubeIDE.
+
+Sadly Seeed Studio doesn't supply any example and STMicroelectronics only provides one example which sets the chip up so send an empty package on an unspecified frequency. This code however is based on this example and expands it by an data input and a full configuration of the chip. There is another example in my repository wich provides code for the reciever.
+
+Apart from the example code by STM (STMicroelectronics/STM32CubeWL/Projects/NUCLEO-WL55JC/Examples/SUBGHZ/SUBGHZ_Tx_Mode) I used documents RM0461 (Reference manual for STM32WLEx) and UM2642 (Description of STM32WL HAL and low-layer drivers).
+
+The code is structured after chapter 4.9.1 from RM0461 and is configured to use a frequency allowed in Europ an otherwise default, easy to use or parameters that increase stability. Details are explained in the chapters describing the code that defines them. 
 
 
-Umsetzung der Sequence in RM0461 Kapitel 4.9.1 mit HAR_Reference ... UM2642 und dem Beispiel aus dem STM32CubeWL firmware package (UM2643)
 
-
-
-## 4.9.1 Basic sequence for LoRa, (G)MSK and (G)FSK transmit operation
+## Code structure from RM0461, chapter 4.9.1
 The sub-GHz radio can be set in LoRa, (G)MSK or (G)FSK transmit operation mode with
 the following steps:
 
@@ -33,25 +43,21 @@ the following steps:
 
 
 
-### 1. Buffer Adresse setzen
+### 1. Define the location of the transmit payload data in the data buffer
 
 #### code
 
 RadioParam[0] = 0x80U;
-
 RadioParam[1] = 0x00U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, &RadioParam, 2) != *HAL_OK*)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, &RadioParam, 2) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
 
 
-#### Erklärung
+#### explanation
 
 Optcode: 0x8fU
 
@@ -67,103 +73,90 @@ byte 2 (w) bits 7:0 RxBaseAddr[7:0]: Rx base address offset relative to the sub-
 
 
 
-Aus RM0461 - Kapitel 4.6:
+From RM0461 - Chapter 4.6:
 
-In order to retrieve data after Sleep mode
-retention, the default values must be used (TxBaseAddr = 0x80 and RxBaseAddr = 0x00),
-or RxPayloadLength and RxBufferPointer must be stored in the CPU memory.
+In order to retrieve data after Sleep mode retention, the default values must be used (TxBaseAddr = 0x80 and RxBaseAddr = 0x00), or RxPayloadLength and RxBufferPointer must be stored in the CPU memory.
 
+#### parameter bytes
 
-
-Dementsprechend werden folgende Bytes gesendet:
-
-|      | byte 1      | byte 2      | byte 3      |
-| ---- | ----------- | ----------- | ----------- |
-| hex  | 0x8F        | 0x80        | 0x00        |
-| bin  | 0b1000 1111 | 0b1000 0000 | 0b0000 0000 |
+| **byte** | **hex** | **bin**     | **note**        |
+| -------- | ------- | ----------- | --------------- |
+| 1        | 0x80    | 0b1000 0000 | Tx base address |
+| 2        | 0x00    | 0b0000 0000 | Rx base address |
 
 
 
-### 2. Payload in den Buffer schreibe
+### 2. Write Payload to buffer
 
 #### code
 
 uint8_t payload[64] = "Hello World!";
 
-if (HAL_SUBGHZ_WriteBuffer(&hsubghz, 0, &payload, sizeof(payload)) != *HAL_OK*)
-
+if (HAL_SUBGHZ_WriteBuffer(&hsubghz, 0, &payload, sizeof(payload)) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung
+#### explanation
 
-die 0 ist der Offset im Buffer. Der rest ist selbsterklärend
+The second parameter (0) is the offset in the buffer.
 
 
 
-### 3. Packet Type setzen
+### 3. Select packet type
 
 #### code
 
 RadioParam[0] = 0x01U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, *RADIO_SET_PACKETTYPE*, &RadioParam, 1) != HAL_OK)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, &RadioParam, 1) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung 
-
-Set_PacketType(PktType) allows the selection of packet frame format. This command
-must be the first command of a sub-GHz radio configuration sequence.
-Changing from one sub-GHz radio configuration to another is done using
-Set_PacketType(). The parameters from the previous sub-GHz radio configuration are
-lost. The switch from one configuration mode to another is only accepted in Standby mode.
-
-byte 0 (w)  bits 7:0 Opcode: 0x8A.
-byte 1 (w)  bits 7:2 Reserved, must be kept at reset value.
-		   bits 1:0 PktType[1:0]: Packet type definition
-0: FSK generic packet type
-1: LoRa packet type
-2: BPSK packet type
-3: MSK generic packet type
-Other: reserved
-
-byte 1: 0b00000001 = 0x01
 
 
+#### explanation
 
-### 4. Frame Format festlegen
+Set_PacketType(PktType) allows the selection of packet frame format. This command must be the first command of a sub-GHz radio configuration sequence. Changing from one sub-GHz radio configuration to another is done using Set_PacketType(). The parameters from the previous sub-GHz radio configuration are lost. The switch from one configuration mode to another is only accepted in Standby mode.
+
+byte 0 (w)        bits 7:0 Opcode: 0x8A.
+byte 1 (w)	bits 7:2 Reserved, must be kept at reset value.
+			 bits 1:0 PktType[1:0]: Packet type definition
+
+​			 0: FSK generic packet type
+​			 1: LoRa packet type
+​			 2: BPSK packet type
+​			 3: MSK generic packet type
+​			 Other: reserved
+
+#### parameter bytes
+
+| **byte** | **hex** | **bin**     | **note**    |
+| -------- | ------- | ----------- | ----------- |
+| 1        | 0x01    | 0b0000 0001 | packet type |
+
+
+
+### 4. Define frame format
 
 #### code
 
 RadioParam[0] = 0x00U;
-
 RadioParam[1] = 0x0CU;
-
 RadioParam[2] = 0x00U;
-
 RadioParam[3] = 0x40U;
-
 RadioParam[4] = 0x01U;
-
 RadioParam[5] = 0x00U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, &RadioParam, 6) != *HAL_OK*)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, &RadioParam, 6) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung
+
+
+#### explanation
 
 **LoRa Set_PacketParams() command**
 Set_PacketParams(PbLength, HeaderType, PayloadLength, CrcType,
@@ -190,70 +183,80 @@ byte 6           bits 7:1       Reserved, must be kept at reset value.
                                              0: standard IQ setup
                                              1: inverted IQ setup
 
+#### parameter bytes
 
+| **byte** | hex  | bin        | note                             |
+| -------- | ---- | ---------- | -------------------------------- |
+| 1        | 0x00 | 0b00000000 | 12-symbol-long preamble sequence |
+| 2        | 0x0C | 0b00001100 | 12-symbol-long preamble sequence |
+| 3        | 0x00 | 0b00000000 | explicit header mode             |
+| 4        | 0x40 | 0b01000000 | 64 bit packet length.            |
+| 5        | 0x01 | 0b00000001 | CRC enabled                      |
+| 6        | 0x00 | 0b00000000 | standard IQ setup                |
 
-|        | hex  | bin        |
-| ------ | ---- | ---------- |
-| byte 1 | 0x00 | 0b00000000 |
-| byte 2 | 0x0C | 0b00001100 |
-| byte 3 | 0x00 | 0b00000000 |
-| byte 4 | 0x40 | 0b01000000 |
-| byte 5 | 0x01 | 0b00000001 |
-| byte 6 | 0x00 | 0b00000000 |
-
-Erklärung in RM0461 - 4.5.2
+explanation in RM0461, chapter 4.5.2
 
 byte 1 und byte 2: By default, the packet is configured with a 12-symbol-long preamble sequence. 
 
-byte 3: packets mit Header ausgewählt - explicit header mode
+byte 3: packets with header selected - explicit header mode
 
-byte 4: da explicit header mode gewählt sollte dieser Wert egal sein. es wird aber 64 gewählt, da das die hälfte der RxBuffers ist und so zwei Packets gebuffert werden könnten.
+byte 4: since explicit header mode was selected, this should be redundant. But 64 is selected anyway since it is half of the Tx buffer and therefore two packets can be stored.
 
-byte 5: CRC (Cyclic redundancy check) wird enabled. Ka was das genau macht aber eine Redundanz kann mal nicht schaden
+byte 5: CRC (Cyclic redundancy check) is enabled. I'm not quite sure, what it does bur error detection shouldn't hurt.
 
-byte 6: das ist irgendwas super black magick artiges. Da machen wir einfach Standard und gut is.
+byte 6: This is some real dark magic rf stuff, that scares me a little. It is set to the default and I hope it doesn't come back to haunt me.
 
 
 
-### 5. Synchonisations word definieren
+### 5. Define synchronization word
 
 #### code
 
 RadioParam[0] = 0x14U;
-
 RadioParam[1] = 0x24U;
 
-if (HAL_SUBGHZ_WriteRegisters(&hsubghz, (uint16_t) 0x740, &RadioParam, 2) != *HAL_OK*)
-
+if (HAL_SUBGHZ_WriteRegisters(&hsubghz, (uint16_t) 0x740, &RadioParam, 2) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung
 
-Hier wird definiert, ob es sich um ein privates oder öffentliches Netzwerk handelt. Also keine Ahnung, was das mit dem Netzwerk soll ... aber der default ist privat, also nehmen wir das.
 
-4.10.33 Sub-GHz radio LoRa synchronization word MSB register
-(SUBGHZ_LSYNCRH)
+#### explanation
+
+This defines whether a private or a public network is used. I have no idea what kind of network this describes since i'm setting up a point to point transmition. Since private is the default, we're going to use it.
+
+
+
+**4.10.33 Sub-GHz radio LoRa synchronization word MSB register (SUBGHZ_LSYNCRH)**
+
 Address offset: 0x740
 Reset value: 0x14
 
-Bits 7:0 SYNCWORD[15:8]: LoRa synchronization word MSB bits [15:8]
-0x14: LoRa private network
-0x34: LoRa public network
-Others: reserved
+Bits 7:0 	SYNCWORD[15:8]: 	LoRa synchronization word MSB bits [15:8]
+									0x14: LoRa private network
+									0x34: LoRa public network
+									Others: reserved
 
-4.10.34 Sub-GHz radio LoRa synchronization word LSB register
-(SUBGHZ_LSYNCRL)
+**4.10.34 Sub-GHz radio LoRa synchronization word LSB register (SUBGHZ_LSYNCRL)**
+
 Address offset: 0x741
 Reset value: 0x24
 
-Bits 7:0 SYNCWORD[7:0]: LoRa synchronization word LSB bits [7:0]
-0x24: LoRa private network
-0x44: LoRa public network
-Others: reserved
+Bits 7:0 	SYNCWORD[7:0]: 	 LoRa synchronization word LSB bits [7:0]
+									0x24: LoRa private network
+									0x44: LoRa public network
+									Others: reserved
+
+
+
+#### parameter bytes
+
+| **byte** | hex  | bin         | note                     |
+| -------- | ---- | ----------- | ------------------------ |
+| 1        | 0x14 | 0b0001 0100 | LoRa private network MSB |
+| 2        | 0x24 | 0b0010 0100 | LoRa private network LSB |
+
 
 
 
@@ -262,19 +265,13 @@ Others: reserved
 #### code
 
 RadioParam[0] = 0x33U;
-
 RadioParam[1] = 0xBCU;
-
 RadioParam[2] = 0xA1U;
-
 RadioParam[3] = 0x00U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, &RadioParam, 4) != *HAL_OK*)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, &RadioParam, 4) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
 #### Erklärung
