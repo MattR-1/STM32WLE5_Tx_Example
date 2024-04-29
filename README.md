@@ -224,7 +224,7 @@ if (HAL_SUBGHZ_WriteRegisters(&hsubghz, (uint16_t) 0x740, &RadioParam, 2) != HAL
 
 #### explanation
 
-This defines whether a private or a public network is used. I have no idea what kind of network this describes since i'm setting up a point to point transmition. Since private is the default, we're going to use it.
+This defines whether a private or a public network is used. I have no idea what kind of network this describes since i'm setting up a point to point transmission. Since private is the default, we're going to use it.
 
 
 
@@ -260,7 +260,7 @@ Bits 7:0 	SYNCWORD[7:0]: 	 LoRa synchronization word LSB bits [7:0]
 
 
 
-### 6. Rf Frequenz definieren
+### 6. Define RF frequency
 
 #### code
 
@@ -274,7 +274,7 @@ if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, &RadioParam, 4) != HA
 	Error_Handler();
 }
 
-#### Erklärung
+#### explanation
 
 **Set_RfFrequency() command**
 Set_RfFrequency(RfFreq) is used to lock the RF-PLL frequency to the transmit and receive frequency.
@@ -285,134 +285,137 @@ bytes 4:1     bits 31:0     RfFreq[31:0]: RF frequency
 
 
 
-Die Rf-Frequenz wird auf 868000000 Hz gesetzt (868MHz) das ist 33 BC A1 00
+I'm assuming the RF frequency is the carrier frequency. But it could be that the RF-PLL frequency is the carrier frequency. I want the carrier frequency to be 868000000 Hz (868MHz), since my aplication has to be legal in Europ. In hex that would be: 0x33BCA100, which is split up into four bytes.
+
+#### parameter bytes
+
+| **byte** | hex  | bin         | note         |
+| -------- | ---- | ----------- | ------------ |
+| 1        | 0x33 | 0b0011 0011 | RF frequency |
+| 2        | 0xBC | 0b1011 1100 | RF frequency |
+| 3        | 0xA1 | 0b1010 0001 | RF frequency |
+| 4        | 0x00 | 0b0000 0000 | RF frequency |
 
 
 
-### 7. PA Konfiguration festlegen
+### 7. Define the PA configuration
 
 #### code
 
 RadioParam[0] = 0x04U;
-
 RadioParam[1] = 0x00U;
-
 RadioParam[2] = 0x01U;
-
 RadioParam[3] = 0x01U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, &RadioParam, 4) != *HAL_OK*)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, &RadioParam, 4) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung
+#### explanation
 
-Set_PaConfig() command
-Set_PaConfig(PaDutyCycle, HpMax, PaSel, 0x01) is used to customize the
-maximum output power and PA efficiency.
+**Set_PaConfig() command**
+Set_PaConfig(PaDutyCycle, HpMax, PaSel, 0x01) is used to customize the maximum output power and PA efficiency.
 
-byte 0 bits 7:0 Opcode: 0x95
-byte 1 bits 7:3 Reserved, must be kept at reset value.
-bits 2:0 PaDutyCycle[2:0]: PA duty cycle (conduit angle) control
-Duty cycle = 0.2 + 0.04 x PaDutyCycle[2:0] (see Table 27 for settings)
-Caution: The following restrictions must be observed to avoid over-stress on
-the PA:
-- LP PA mode with synthesis frequency >400 MHz, PaDutyCycle
-must be < 0x7.
-- LP PA mode with synthesis frequency < 400 MHz, PaDutyCycle
-must be < 0x4.
+byte 0 	bits 7:0 	Opcode: 0x95
+byte 1 	bits 7:3 	Reserved, must be kept at reset value.
+		    bits 2:0         PaDutyCycle[2:0]:       PA duty cycle (conduit angle) control Duty cycle = 0.2 + 0.04 x PaDutyCycle[2:0] (see Table 27 for settings)
+
+Caution: The following restrictions must be observed to avoid over-stress on the PA:
+
+- LP PA mode with synthesis frequency >400 MHz, PaDutyCycle must be < 0x7.
+- LP PA mode with synthesis frequency < 400 MHz, PaDutyCycle must be < 0x4.
 - HP PA mode, PaDutyCycle must be < 0x4.
-byte 2 bits 2:0 HpMax[2:0]: HP PA output power (see Table 27 for settings)
-bits 7:3 Reserved, must be kept at reset value.
-byte 3 bits 7:1 Reserved, must be kept at reset value.
-bit 0 PaSel: PA selection.
-0: HP PA selected
-1: LP PA selected (default)
-byte 4 bits 7:0 0x01
 
 
 
-Da es sich bei den Dev Board um die Le - (Hardwarekonfiguration LP) handelt, wird einfach die mittlere Stufe mit 14dbm output eingestellt, da die Leistungsbeschränkungen des Chips berücksichtigt werden müssen. Das ist die mittlere Zeile. Dementsprechend gilt:
-
-|        | hex  | bin  |
-| ------ | ---- | ---- |
-| byte 1 | 0x04 |      |
-| byte 2 | 0x00 |      |
-| byte 3 | 0x01 |      |
-| byte 4 | 0x01 |      |
-
+byte 2 	bits 2:0 	HpMax[2:0]: HP PA output power (see Table 27 for settings)
+		    bits 7:3 	Reserved, must be kept at reset value.
+byte 3 	bits 7:1 	Reserved, must be kept at reset value.
+		    bit 0 	     PaSel: PA selection.
+						0: HP PA selected
+						1: LP PA selected (default)
+byte 4 	bits 7:0 	0x01
 
 
-### 8. PA output power definieren
+
+Since I'm using the Wio-E5-LE, which has the impedance matching on the RF output for the low power configuration (LP PA), the second line of Table 27 in RM0461 is selected. 
+
+
+
+#### parameter bytes
+
+| byte | hex  | bin         | note                 |
+| ---- | ---- | ----------- | -------------------- |
+| 1    | 0x04 | 0b0000 0100 | PaDutyCycle          |
+| 2    | 0x00 | 0b0000 0000 | HpMax                |
+| 3    | 0x01 | 0b0000 0001 | LP PA selected       |
+| 4    | 0x01 | 0b0000 0001 | predefined in RM0461 |
+
+
+
+### 8. Define the PA output power and ramping
 
 #### code
 
 RadioParam[0] = 0x0EU;
-
 RadioParam[1] = 0x04U;
 
-if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, &RadioParam, 2) != *HAL_OK*)
-
+if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, &RadioParam, 2) != HAL_OK)
 {
-
 	Error_Handler();
-
 }
 
-#### Erklärung
+#### explanation
 
-Set_TxParams() command
-Set_TxParams(Power, RampTime) is used to set the transmit output power and the PA
-ramp-up time.
+**Set_TxParams() command**
+Set_TxParams(Power, RampTime) is used to set the transmit output power and the PA ramp-up time.
 
-byte 0 bits 7:0 Opcode: 0x8E
-byte 1 bits 7:0 Power[7:0]: Output power setting
-LP PA selected in Set_PaConfig()
-0x0E:+ 14 dB
-...
-0x00: 0 dB
-...
-0xEF: - 17 dB
-Others: reserved
-HP PA selected in Set_PaConfig()
-0x16:+ 22 dB
-...
-0x00: 0 dB
-...
-0xF7: - 9 dB
-Others: reserved
-byte 2 bits 7:0 RampTime[7:0]: PA ramp time for FSK, MSK and LoRa modulation
-0x00: 10 μs
-0x01: 20 μs
-0x02; 40 μs
-0x03: 80 μs
-0x04: 200 μs
-0x05: 800 μs
-0x06: 1700 μs
-0x07: 3400 μs
-Others: reserved
-Note: In BPSK mode, the ramping time is specific and RampTime[7:0] is not
-used.
+byte 0 	bits 7:0 	Opcode: 0x8E
+byte 1 	bits 7:0 	Power[7:0]: Output power setting
+						LP PA selected in Set_PaConfig()
+							0x0E:+ 14 dB
+							...
+							0x00: 0 dB
+							...
+							0xEF: - 17 dB
+							Others: reserved
+						HP PA selected in Set_PaConfig()
+							0x16:+ 22 dB
+							...
+							0x00: 0 dB
+							...
+							0xF7: - 9 dB
+							Others: reserved
+byte 2 	bits 7:0 	RampTime[7:0]: PA ramp time for FSK, MSK and LoRa modulation
+						0x00: 10 μs
+						0x01: 20 μs
+						0x02; 40 μs
+						0x03: 80 μs
+						0x04: 200 μs
+						0x05: 800 μs
+						0x06: 1700 μs
+						0x07: 3400 μs
+						Others: reserved
+Note: In BPSK mode, the ramping time is specific and RampTime[7:0] is not used.
 
 
 
-byte 1: Definiert die Power, welche in Tabelle 27 und Abschnitt 8 in diesem Document bereits festgelegt
+byte 1: Defines the power. See Table 27 in RM0461 and chapter 7 in this document for more details.
 
-byte 2: In diesem Fall wurden moderate 200 us gewählt. Einfach so. Weil ich habs ja nicht eilig.
-butter bei die Fische: ich vermute mal, dass ne kurze PA ramp Zeit Störungen verursacht. Aber wissen tu ich hier nix.
-
+byte 2: A PA ramp time of 200 μs is selected. This is probably on the slow side but for this example there is no rush and a short time probably introduces weird RF black magic problems.
 
 
-|        | hex  | bin  |
-| ------ | ---- | ---- |
-| byte 1 | 0x0E |      |
-| byte 2 | 0x04 |      |
+#### parameter bytes
 
-### 9. Modulationsparameter festlegen
+| byte | hex  | bin         | note     |
+| ---- | ---- | ----------- | -------- |
+| 1    | 0x0E | 0b0000 1110 | Power    |
+| 2    | 0x04 | 0b0000 0100 | RampTime |
+
+
+
+### 9. Define the modulation parameters
 
 #### code
 
@@ -426,9 +429,11 @@ if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, &RadioParam, 4) 
 	Error_Handler();
 }
 
-#### Erklärung
 
-LoRa Set_ModulationParams() command
+
+#### explanation
+
+**LoRa Set_ModulationParams() command**
 Set_ModulationParams(Sf, Bw, Cr, Ldro) is used to configure the LoRa
 modulation parameters for the sub-GHz radio. Depending on the selected packet type in
 Set_PacketType() sent prior to this function, the parameters for LoRa are interpreted as
@@ -471,22 +476,26 @@ byte 4          bits 7:1           Reserved, must be kept at reset value.
                                                 0: low data rate optimization disabled
                                                 1: low data rate optimization enabled
 
-byte 1: SF (Spreading factor) Default ist 7, also nehmen wir das. aber eigentlich wäre höher besser.
+byte 1: SF (Spreading factor) Since 7 is the default, that's what we're going to use. But a higher SF would lead to a more stable transmission. (RM0461, Chapter 4.5.1)
 
-byte 2: BW (Bandwidth) Da gibts kein Default. Aber Je höher, desto mehr linkbudget aber weniger range. Also wird das untere drittel gewählt: 20.83kHz -> 0x09
+byte 2: BW (Bandwidth) Since there is no default for the bandwidth, i picked a pretty low one without going into the extreme: 20.83kHz -> 0x09. The lower the BW, the lower the link budget but the higher the range. My project needs more range than linkbudget, thats why it was picked like that.
 
-byte 3: CR (Forward error correction coding rate) zwar ist der default 4/6 aber RM0461 sagt, dass 4/5 der beste trade off ist. Also nehmen wir 4/5
+byte 3: CR (Forward error correction coding rate) The default setting for CR is 4/6 but RM0461, chapter 4.5.1 says that 4/5 is the best trade off between immunity to interference (lower CR) and longer
+transmission time (higher CR), so 4/5 was picked.
 
-byte 4: LDRO (Low data rate optimization) Das hilft bei hoher BW oder niedrigem SF. Wir haben hier das gegenteil, also können wir uns das sparen
+byte 4: LDRO (Low data rate optimization) This would help at high BW and low SF. We have neither in this example, so it's turned off.
 
 
 
-|        | hex  | bin  |
-| ------ | ---- | ---- |
-| byte 1 | 0x07 |      |
-| byte 2 | 0x09 |      |
-| byte 3 | 0x01 |      |
-| byte 4 | 0x00 |      |
+
+#### parameter bytes
+
+| byte | hex  | bin         | note                                            |
+| ---- | ---- | ----------- | ----------------------------------------------- |
+| 1    | 0x07 | 0b0000 0111 | SF (Spreading factor) - 7 (default)             |
+| 2    | 0x09 | 0b0000 1001 | BW (Bandwidth) - 20.83kHz                       |
+| 3    | 0x01 | 0b0000 0001 | CR (Forward error correction coding rate) - 4/5 |
+| 4    | 0x00 | 0b0000 0000 | LDRO (Low data rate optimization) - off         |
 
 
 
@@ -494,11 +503,11 @@ byte 4: LDRO (Low data rate optimization) Das hilft bei hoher BW oder niedrigem 
 
 #### code
 
-RadioParam[0] = 0x02U;
-RadioParam[1] = 0xC1U;
+RadioParam[0] = 0x01U;
+RadioParam[1] = 0x01U;
 RadioParam[2] = 0x00U;
 RadioParam[3] = 0x01U;
-RadioParam[4] = 0x02U;
+RadioParam[4] = 0x01U;
 RadioParam[5] = 0x00U;
 RadioParam[6] = 0x00U;
 RadioParam[7] = 0x00U;
@@ -508,49 +517,55 @@ if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, &RadioParam, 8) != HAL_OK)
 	Error_Handler();
 }
 
-#### Erklärung
+#### explanation
 
-Cfg_DioIrq() command
+**Cfg_DioIrq() command**
 Cfg_DioIrq(IrqMask, Irq1Mask, Irq2Mask, Irq3Mask) allows interrupts to be
 masked and mapped on the IRQ lines.
 
-byte 0 bits 7:0 Opcode: 0x08
-bytes 2:1 bits 15:0 IrqMask[15:0]: Global interrupt enable
-See Table 29 for interrupt bit map definition. For each bit:
-0: IRQ disabled
-1: IRQ enabled
-bytes 4:3 bits 15:0 Irq1Mask[15:0]: IRQ1 line Interrupt enable
-0: interrupt on IRQ1 line disable
-1: interrupt on IRQ1 line enabled
-bytes 6:5 bits 15:0 Irq2Mask[15:0]: IRQ2 line Interrupt enable
-0: interrupt on IRQ2 line disable
-1: interrupt on IRQ2 line enabled
-bytes 8:7 bits 15:0 Irq3Mask[15:0]: IRQ3 line Interrupt enable
-0: interrupt on IRQ3 line disable
-1: interrupt on IRQ3 line enabled
+byte 0 		bits 7:0 		Opcode: 0x08
+bytes 2:1 	   bits 15:0 	      IrqMask[15:0]: Global interrupt enable
+							  See Table 29 for interrupt bit map definition. For each bit:
+								0: IRQ disabled
+								1: IRQ enabled
+bytes 4:3 	   bits 15:0 	      Irq1Mask[15:0]: IRQ1 line Interrupt enable
+								0: interrupt on IRQ1 line disable
+								1: interrupt on IRQ1 line enabled
+bytes 6:5 	   bits 15:0 	      Irq2Mask[15:0]: IRQ2 line Interrupt enable
+								0: interrupt on IRQ2 line disable
+								1: interrupt on IRQ2 line enabled
+bytes 8:7 	   bits 15:0 	      Irq3Mask[15:0]: IRQ3 line Interrupt enable
+								0: interrupt on IRQ3 line disable
+								1: interrupt on IRQ3 line enabled
+
+I am very unsure about the way this works. The way I understood this is: bytes 1 and 2 activate the interrupts in general and bytes 3 to 8 map them onto an interrupt line. There are three lines. If four or more interrupts are needed, some interrupts have to share a line. 
+
+I imagine, there are hardware limits on how many interrupt lines there are. I don't quite understand, why this is important to me since the status of the interrupts is read back in one message. Maby one interrupt activates the whole line and if there are multiple interrupts mapped to one line you can't tell which one fired, but this is just a guess.
+
+The only two things I want to know in this example is whether the transmission was successful or if it timed out. So using Table 29 in RM0461 Bit 0 (TxDone) and Bit 9 (Timeout) are activated. After that the TxDone interrupt is mapped to line 1 and the Timeout interrupt is mapped to line 2. Line 3 remains deactivated.
+
+
+#### parameter bytes
+
+
+| byte | hex  | bin        | notes              |
+| ---- | ---- | ---------- | ------------------ |
+| 1    | 0x01 | 0b00000001 | IRQ Mask MSB       |
+| 2    | 0x01 | 0b00000001 | IRQ Mask LSB       |
+| 3    | 0x00 | 0b00000000 | IRQ1 Line Mask MSB |
+| 4    | 0x01 | 0b00000001 | IRQ1 Line Mask LSB |
+| 5    | 0x01 | 0b00000001 | IRQ2 Line Mask MSB |
+| 6    | 0x00 | 0b00000000 | IRQ2 Line Mask LSB |
+| 7    | 0x00 | 0b00000000 | IRQ3 Line Mask MSB |
+| 8    | 0x00 | 0b00000000 | IRQ3 Line Mask LSB |
 
 
 
-Es soll festgestellt werden, ob das Paket gesendet wurde oder ob es einen Timeout gab. Dementsprechend wird nach Tabelle 29 in RM0461 IRQ-Source 0 (Tx Done) und IRQ-Source 9 (Timeout) aktiviert. Dabei sollen IRQ1 Tx-Done signalisieren und IRQ2 Timeout signalisieren. IRQ3 soll deaktiviert bleiben.
-
-|        | hex  | bin        |
-| ------ | ---- | ---------- |
-| byte 1 | 0x02 | 0b00000010 |
-| byte 2 | 0x01 | 0b00000001 |
-| byte 3 | 0x00 | 0b00000000 |
-| byte 4 | 0x01 | 0b00000001 |
-| byte 5 | 0x02 | 0b00000010 |
-| byte 6 | 0x00 | 0b00000000 |
-| byte 7 | 0x00 | 0b00000000 |
-| byte 8 | 0x00 | 0b00000000 |
 
 
 
 
-
-
-
-### 11. Übertragung starten
+### 11. Start the transmission
 
 #### code
 
@@ -563,7 +578,7 @@ if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, &RadioParam, 3) != HAL_OK)
 	Error_Handler();
 }
 
-#### Erklärung
+#### explanation
 
 Set_Tx() command
 Set_Tx(Timeout) is used to set the sub-GHz radio in TX mode.
@@ -579,14 +594,22 @@ When Set_Tx(Timeout) is sent in Standby or Receive mode, the sub-GHz radio passe
 through the FS mode (no need to send Set_Fs()). In this case, the RF-PLL frequency
 must be set by Set_RfFrequency() prior sending Set_Tx(Timeout).
 
-Es soll mal ein Timeout von 10s eingestellt werden, um zu verhindern, dass der Chip sich zu sehr aufheitzt.
+A timeout of 10 seconds is set to prevent the chip from overheating.
 
 Timeout = 10s/15.625us = 640000 = 0x9C400
 
 
 
-|        | hex  | bin  |
-| ------ | ---- | ---- |
-| byte 1 | 0x09 |      |
-| byte 2 | 0xC4 |      |
-| byte 3 | 0x00 |      |
+#### parameter bytes
+
+| byte | hex  | bin         | notes   |
+| ---- | ---- | ----------- | ------- |
+| 1    | 0x09 | 0b0000 1001 | Timeout |
+| 2    | 0xC4 | 0b1100 0100 | Timeout |
+| 3    | 0x00 | 0b0000 0000 | Timeout |
+
+
+
+### Rest of the code
+
+The rest of the code is here for debugging purposes. Pin PB5 is wired to a LED via open drain. UART1 is connected to a serial port, which I'm monitoring with Putty.

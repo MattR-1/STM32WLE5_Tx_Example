@@ -210,11 +210,11 @@ int main(void)
 
 
   // 10. Configure interrupts
-  RadioParam[0] = 0x02U;
-  RadioParam[1] = 0xC1U;
+  RadioParam[0] = 0x01U;
+  RadioParam[1] = 0x01U;
   RadioParam[2] = 0x00U;
-  RadioParam[3] = 0x00U;
-  RadioParam[4] = 0x00U;
+  RadioParam[3] = 0x01U;
+  RadioParam[4] = 0x01U;
   RadioParam[5] = 0x00U;
   RadioParam[6] = 0x00U;
   RadioParam[7] = 0x00U;

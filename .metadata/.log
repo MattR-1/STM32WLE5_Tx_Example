@@ -1,0 +1,31 @@
+!SESSION 2024-04-29 17:28:58.069 -----------------------------------------------
+eclipse.buildId=Version 1.15.1
+java.version=17.0.8.1
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=de_DE
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -data C:\Users\matth\Documents\GitHub\STM32WLE5_Tx_Example
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2024-04-29 17:29:04.776
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2024-04-29 17:29:04.789
+!MESSAGE Log4j2 initialized with config file C:\Users\matth\Documents\GitHub\STM32WLE5_Tx_Example\.metadata\.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2024-04-29 17:29:08.317
+!MESSAGE Started RMI Server, listening on port 41337
+!SESSION 2024-04-29 17:34:39.600 -----------------------------------------------
+eclipse.buildId=Version 1.15.1
+java.version=17.0.8.1
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=de_DE
+Framework arguments:  C:\Users\matth\Documents\GitHub\STM32WLE5_Tx_Example\.project
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 C:\Users\matth\Documents\GitHub\STM32WLE5_Tx_Example\.project
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2024-04-29 17:34:44.446
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2024-04-29 17:34:44.448
+!MESSAGE Log4j2 initialized with config file C:\Users\matth\Documents\GitHub\STM32WLE5_Tx_Example\.metadata\.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2024-04-29 17:34:48.985
+!MESSAGE Started RMI Server, listening on port 41337
