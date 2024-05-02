@@ -14,6 +14,8 @@ Apart from the example code by STM (STMicroelectronics/STM32CubeWL/Projects/NUCL
 
 The code is structured after chapter 4.9.1 from RM0461 and is configured to use a frequency allowed in Europ an otherwise default, easy to use or parameters that increase stability. Details are explained in the chapters describing the code that defines them. 
 
+There is another reference manual: RM0453, which seems to have the same content as RM0461 when it comes to the SUB-GHZ-radio chapter.
+
 
 
 ## Code structure from RM0461, chapter 4.9.1
@@ -287,6 +289,10 @@ bytes 4:1     bits 31:0     RfFreq[31:0]: RF frequency
 
 I'm assuming the RF frequency is the carrier frequency. But it could be that the RF-PLL frequency is the carrier frequency. I want the carrier frequency to be 868000000 Hz (868MHz), since my aplication has to be legal in Europ. In hex that would be: 0x33BCA100, which is split up into four bytes.
 
+RF-PLL frequency = 32e^6 x RFfreq / 2^25
+
+RF-PLL frequency = 827789307 Hz = 32e^6 x 868000000Hz / 2^25
+
 #### parameter bytes
 
 | **byte** | hex  | bin         | note         |
@@ -345,12 +351,12 @@ Since I'm using the Wio-E5-LE, which has the impedance matching on the RF output
 
 #### parameter bytes
 
-| byte | hex  | bin         | note                 |
-| ---- | ---- | ----------- | -------------------- |
-| 1    | 0x04 | 0b0000 0100 | PaDutyCycle          |
-| 2    | 0x00 | 0b0000 0000 | HpMax                |
-| 3    | 0x01 | 0b0000 0001 | LP PA selected       |
-| 4    | 0x01 | 0b0000 0001 | predefined in RM0461 |
+| byte | hex  | bin         | note                            |
+| ---- | ---- | ----------- | ------------------------------- |
+| 1    | 0x04 | 0b0000 0100 | PaDutyCycle                     |
+| 2    | 0x00 | 0b0000 0000 | HpMax                           |
+| 3    | 0x01 | 0b0000 0001 | LP PA selected                  |
+| 4    | 0x01 | 0b0000 0001 | predefined in RM0461 and RM0453 |
 
 
 
@@ -493,7 +499,7 @@ byte 4: LDRO (Low data rate optimization) This would help at high BW and low SF.
 | byte | hex  | bin         | note                                            |
 | ---- | ---- | ----------- | ----------------------------------------------- |
 | 1    | 0x07 | 0b0000 0111 | SF (Spreading factor) - 7 (default)             |
-| 2    | 0x09 | 0b0000 1001 | BW (Bandwidth) - 20.83kHz                       |
+| 2    | 0x09 | 0b0000 1001 | BW (Bandwidth) - bandwidth 20 (20.83kHz)        |
 | 3    | 0x01 | 0b0000 0001 | CR (Forward error correction coding rate) - 4/5 |
 | 4    | 0x00 | 0b0000 0000 | LDRO (Low data rate optimization) - off         |
 
@@ -540,7 +546,7 @@ bytes 8:7 	   bits 15:0 	      Irq3Mask[15:0]: IRQ3 line Interrupt enable
 
 I am very unsure about the way this works. The way I understood this is: bytes 1 and 2 activate the interrupts in general and bytes 3 to 8 map them onto an interrupt line. There are three lines. If four or more interrupts are needed, some interrupts have to share a line. 
 
-I imagine, there are hardware limits on how many interrupt lines there are. I don't quite understand, why this is important to me since the status of the interrupts is read back in one message. Maby one interrupt activates the whole line and if there are multiple interrupts mapped to one line you can't tell which one fired, but this is just a guess.
+I imagine, there are hardware limits on how many interrupt lines there are. I don't quite understand, why this is important to me since the status of the interrupts is read back in one message. Mabey one interrupt activates the whole line and if there are multiple interrupts mapped to one line you can't tell which one fired, but this is just a guess.
 
 The only two things I want to know in this example is whether the transmission was successful or if it timed out. So using Table 29 in RM0461 Bit 0 (TxDone) and Bit 9 (Timeout) are activated. After that the TxDone interrupt is mapped to line 1 and the Timeout interrupt is mapped to line 2. Line 3 remains deactivated.
 

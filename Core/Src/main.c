@@ -114,8 +114,8 @@ int main(void)
   HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
 
   // 1. Set Buffer Address
-  RadioParam[0] = 0x80U;
-  RadioParam[1] = 0x00U;
+  RadioParam[0] = 0x80U; // Tx base address
+  RadioParam[1] = 0x00U; // Rx base address
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, &RadioParam, 2) != HAL_OK)
   {
@@ -131,7 +131,7 @@ int main(void)
 
 
   // 3. Set Packet Type
-  RadioParam[0] = 0x01U;
+  RadioParam[0] = 0x01U; //LoRa packet type
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, &RadioParam, 1) != HAL_OK)
   {
@@ -140,12 +140,12 @@ int main(void)
 
 
   // 4. Set Frame Format
-  RadioParam[0] = 0x00U;
-  RadioParam[1] = 0x0CU;
-  RadioParam[2] = 0x00U;
-  RadioParam[3] = 0x40U;
-  RadioParam[4] = 0x01U;
-  RadioParam[5] = 0x00U;
+  RadioParam[0] = 0x00U; // PbLength MSB - 12-symbol-long preamble sequence
+  RadioParam[1] = 0x0CU; // PbLength LSB - 12-symbol-long preamble sequence
+  RadioParam[2] = 0x00U; // explicit header type
+  RadioParam[3] = 0x40U; // 64 bit packet length.
+  RadioParam[4] = 0x01U; // CRC enabled
+  RadioParam[5] = 0x00U; // standard IQ setup
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, &RadioParam, 6) != HAL_OK)
   {
@@ -154,8 +154,8 @@ int main(void)
 
 
   // 5. Define synchronisation word
-  RadioParam[0] = 0x14U;
-  RadioParam[1] = 0x24U;
+  RadioParam[0] = 0x14U; // LoRa private network
+  RadioParam[1] = 0x24U; // LoRa private network
 
   if (HAL_SUBGHZ_WriteRegisters(&hsubghz, (uint16_t) 0x740, &RadioParam, 2) != HAL_OK)
   {
@@ -164,10 +164,10 @@ int main(void)
 
 
   // 6. Define RF Frequency
-  RadioParam[0] = 0x33U;
-  RadioParam[1] = 0xBCU;
-  RadioParam[2] = 0xA1U;
-  RadioParam[3] = 0x00U;
+  RadioParam[0] = 0x33U; //RF frequency - 868000000Hz
+  RadioParam[1] = 0xBCU; //RF frequency - 868000000Hz
+  RadioParam[2] = 0xA1U; //RF frequency - 868000000Hz
+  RadioParam[3] = 0x00U; //RF frequency - 868000000Hz
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, &RadioParam, 4) != HAL_OK)
   {
@@ -176,10 +176,10 @@ int main(void)
 
 
   // 7. Set PA Config
-  RadioParam[0] = 0x04U;
-  RadioParam[1] = 0x00U;
-  RadioParam[2] = 0x01U;
-  RadioParam[3] = 0x01U;
+  RadioParam[0] = 0x04U; // PaDutyCycle
+  RadioParam[1] = 0x00U; // HpMax
+  RadioParam[2] = 0x01U; // LP PA selected
+  RadioParam[3] = 0x01U; // predefined in RM0461 and RM0453
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, &RadioParam, 4) != HAL_OK)
   {
@@ -188,8 +188,8 @@ int main(void)
 
 
   // 8.  Set Tx Parameters
-  RadioParam[0] = 0x0EU;
-  RadioParam[1] = 0x04U;
+  RadioParam[0] = 0x0EU; // Power - +14dB
+  RadioParam[1] = 0x04U; // RampTime - 200us
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, &RadioParam, 2) != HAL_OK)
   {
@@ -198,10 +198,10 @@ int main(void)
 
 
   // 9. Set Modulation parameter
-  RadioParam[0] = 0x07U;
-  RadioParam[1] = 0x09U;
-  RadioParam[2] = 0x01U;
-  RadioParam[3] = 0x00U;
+  RadioParam[0] = 0x07U; // SF (Spreading factor) - 7 (default)
+  RadioParam[1] = 0x09U; // BW (Bandwidth) - 20.83kHz
+  RadioParam[2] = 0x01U; // CR (Forward error correction coding rate) - 4/5
+  RadioParam[3] = 0x00U; // LDRO (Low data rate optimization) - off
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, &RadioParam, 4) != HAL_OK)
   {
@@ -210,14 +210,14 @@ int main(void)
 
 
   // 10. Configure interrupts
-  RadioParam[0] = 0x01U;
-  RadioParam[1] = 0x01U;
-  RadioParam[2] = 0x00U;
-  RadioParam[3] = 0x01U;
-  RadioParam[4] = 0x01U;
-  RadioParam[5] = 0x00U;
-  RadioParam[6] = 0x00U;
-  RadioParam[7] = 0x00U;
+  RadioParam[0] = 0x01U; // IRQ Mask MSB - Timeout interrupt
+  RadioParam[1] = 0x01U; // IRQ Mask LSB - Tx done interrupt
+  RadioParam[2] = 0x00U; // IRQ1 Line Mask MSB
+  RadioParam[3] = 0x01U; // IRQ1 Line Mask LSB - Tx done interrupt on IRQ line 1
+  RadioParam[4] = 0x01U; // IRQ2 Line Mask MSB - Timeout interrupt on IRQ line 2
+  RadioParam[5] = 0x00U; // IRQ2 Line Mask LSB
+  RadioParam[6] = 0x00U; // IRQ3 Line Mask MSB
+  RadioParam[7] = 0x00U; // IRQ3 Line Mask LSB
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, &RadioParam, 8) != HAL_OK)
   {
@@ -239,9 +239,9 @@ int main(void)
 
 
   // 11. Set Tx
-  RadioParam[0] = 0x09U;
-  RadioParam[1] = 0xC4U;
-  RadioParam[2] = 0x00U;
+  RadioParam[0] = 0x09U; // Timeout
+  RadioParam[1] = 0xC4U; // Timeout
+  RadioParam[2] = 0x00U; // Timeout
 
   if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, &RadioParam, 3) != HAL_OK)
   {
