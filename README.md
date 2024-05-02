@@ -505,7 +505,7 @@ byte 4: LDRO (Low data rate optimization) This would help at high BW and low SF.
 
 
 
-### 10. Interrupts configurieren
+### 10. Interrupts configuration
 
 #### code
 

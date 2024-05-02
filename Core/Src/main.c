@@ -61,7 +61,8 @@ static void MX_GPIO_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void uint8_to_bits(uint8_t num, uint8_t *bits_array);
+void reset_uart_buff(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,8 +111,9 @@ int main(void)
   HAL_Delay(300);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
 
-  sprintf(uart_buff, "\n\rOKAAAAAYYYYYY LETS GO! \n\r");
+  sprintf(uart_buff, "\n\rTransmitter:\n\r");
   HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
+  reset_uart_buff();
 
   // 1. Set Buffer Address
   RadioParam[0] = 0x80U; // Tx base address
@@ -225,7 +227,7 @@ int main(void)
   }
 
 
-  // 10.1 Clear Interrupts
+  // 10.1 Read Interrupts
   if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_IRQSTATUS, &interrupts, 3) != HAL_OK)
   {
 	  Error_Handler();
@@ -233,7 +235,7 @@ int main(void)
 
   sprintf(uart_buff, "Interrupts after set:  %i %i %i \n\r", interrupts[0], interrupts[1], interrupts[2]);
   HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
-
+  reset_uart_buff();
 
 
 
@@ -250,28 +252,20 @@ int main(void)
 
 
   // Check interrupts
-
   do
   {
-	  sprintf(uart_buff, "Interrupts after send: %i %i %i \n\r", interrupts[0], interrupts[1], interrupts[2]);
-	  HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
-
 	  if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_IRQSTATUS, &interrupts, 3) != HAL_OK)
 	  {
 		  Error_Handler();
 	  }
 
-	  if(interrupts[1] = 1)
-	  {
-		  signal_delay = 1000;
-	  }
+	  sprintf(uart_buff, "Interrupts after send: %i %i %i \n\r", interrupts[0], interrupts[1], interrupts[2]);
+	  HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
+	  reset_uart_buff();
 
 	  HAL_Delay(2000);
-  } while (interrupts[1] != 0 | interrupts[2] != 0);
+  } while (1);
 
-
-  sprintf(uart_buff, "Interrupts: %i %i %i \n\r", interrupts[0], interrupts[1], interrupts[2]);
-  HAL_UART_Transmit(&huart1, (uint8_t *)uart_buff, sizeof(uart_buff), 100);
 
   /* USER CODE END 2 */
 
@@ -279,10 +273,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-	  HAL_Delay(signal_delay);
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-	  HAL_Delay(signal_delay);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -436,7 +426,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void uint8_to_bits(uint8_t num, uint8_t *bits_array) {
+    for (int i = 7; i >= 0; i--) {
+        bits_array[i] = (num >> (7 - i)) & 0x01;
+    }
+}
 
+
+void reset_uart_buff(void)
+{
+	for(int i = 0; i < 100; i++)
+	{
+		uart_buff[i] = 0;
+	}
+}
 /* USER CODE END 4 */
 
 /**
